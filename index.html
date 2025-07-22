@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="theme-color" content="#1e1b4b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Recovery Tracker">
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUmVjb3ZlcnkgVHJhY2tlciIsInNob3J0X25hbWUiOiJSZWNvdmVyeSIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMWUxYjRiIiwidGhlbWVfY29sb3IiOiIjMWUxYjRiIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjNhV1IwYUQwaU1UQTBBQ0lnYUdWcFoyaDBQU0l4TURBZ0lpQjJhV1YzUW05NFBTSXdJREFnTVRBd0lERXdNQ0lnWm1sc2JEMGlJekkwTkRjME9TSWdlRzFzYm5NOUltaDBkSEE2THk5M2QzY3Vkek11YjNKbkx6SXdNREF2YzNabklpNCtQR052Y21Oc2JHVWdZM2c5SWpVd0lpQmplVDBpTlRBaUlISTlJalEwSWlCbWFXeHNQU0pqZFhKeVpXNTBRMjlzYjNJaUx6NDhMMk55WTJ4bFBqeGphWEpqYkdVZ1kzZzlJalV3SWlCamVUMGlOVEFpSUhJOUlqTXpJaUJtYVd4c1BTSnViMjVsUWdBaElEQ3dRalFoSWlOZk9UZzFPVGRCUXlJdlBqd3ZjM1puUGc9PSIsInR5cGUiOiJpbWFnZS9zdmcreG1sIiwic2l6ZXMiOiIxMDB4MTAwIn1dfQ==">
+    <style>
+        /* Custom icons using CSS */
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            fill: currentColor;
+        }
+        .icon-small {
+            width: 16px;
+            height: 16px;
+        }
+        .icon-large {
+            width: 48px;
+            height: 48px;
+        }
+        /* Smooth animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Custom SVG icons
+        const Icons = {
+            Timer: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12,6 12,12 16,14"/>
+                </svg>
+            ),
+            Play: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5,3 19,12 5,21"/>
+                </svg>
+            ),
+            Pause: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="6" y="4" width="4" height="16"/>
+                    <rect x="14" y="4" width="4" height="16"/>
+                </svg>
+            ),
+            RotateCcw: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="1,4 1,10 7,10"/>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+            ),
+            CheckCircle2: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+            ),
+            Circle: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                </svg>
+            ),
+            Droplets: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+                    <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2.04 4.6 4.14 5.93s3.83 2.34 4.36 4.77c0 3.59-2.91 6.5-6.5 6.5-3.59 0-6.5-2.91-6.5-6.5 0-1.16.21-2.31.56-3.12z"/>
+                </svg>
+            ),
+            Flame: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                </svg>
+            ),
+            Waves: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                    <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                    <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                </svg>
+            ),
+            MessageCircle: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>
+                </svg>
+            ),
+            HelpCircle: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <point cx="12" cy="17" r="0.01"/>
+                </svg>
+            ),
+            X: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="m18 6-12 12"/>
+                    <path d="m6 6 12 12"/>
+                </svg>
+            ),
+            Send: ({ className = "icon" }) => (
+                <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="m22 2-7 20-4-9-9-4Z"/>
+                    <path d="M22 2 11 13"/>
+                </svg>
+            )
+        };
+
+        // Exercise knowledge base
+        const exerciseGuide = {
+            "hamstring stretch": {
+                instructions: "Sit on the floor with one leg extended. Reach toward your toes while keeping your back straight. Hold for 30 seconds per leg.",
+                tips: "Don't bounce or force the stretch. You should feel tension, not pain.",
+                common_mistakes: "Rounding the back, holding breath, forcing the stretch too aggressively."
+            },
+            "quad stretch": {
+                instructions: "Stand and pull your foot toward your glute, or lie on your side and pull your top foot back. Keep knees together and push hips forward slightly.",
+                tips: "Use a wall or chair for balance if standing. Focus on stretching the front of your thigh.",
+                common_mistakes: "Pulling the foot too far to the side, arching the back excessively."
+            },
+            "calf stretch": {
+                instructions: "Place hands against a wall, step one foot back, keep heel down and lean forward. Or use a step and let your heel drop below the step level.",
+                tips: "Keep the back leg straight and heel firmly planted. You should feel the stretch in your calf muscle.",
+                common_mistakes: "Bending the back knee, lifting the heel, not leaning forward enough."
+            },
+            "hip flexor stretch": {
+                instructions: "Kneel with one foot forward in a lunge position. Push your hips forward while keeping your back straight. You can also do this standing in a lunge position.",
+                tips: "Tighten your glutes and core to increase the stretch. You should feel it in the front of your hip.",
+                common_mistakes: "Arching the back, not pushing hips forward enough, knee extending past ankle."
+            },
+            "glute stretch": {
+                instructions: "For figure 4: Sit and place ankle on opposite knee, lean forward. For pigeon: From hands and knees, bring one knee forward and extend other leg back.",
+                tips: "Breathe deeply and relax into the stretch. Don't force it.",
+                common_mistakes: "Rounding shoulders, holding breath, forcing the stretch."
+            },
+            "massage gun": {
+                instructions: "Move the massage gun slowly over muscle groups. Use gentle to medium pressure. Let the tool do the work - don't press hard.",
+                tips: "Start with softer attachments. Move in long, gliding motions rather than staying in one spot.",
+                common_mistakes: "Using too much pressure, staying on one spot too long, using on bones or joints."
+            },
+            "pool walking": {
+                instructions: "Walk normally in chest-deep water. Maintain good posture and natural arm swing. Water should provide gentle resistance.",
+                tips: "Focus on smooth, controlled movements. The water supports your weight while providing resistance.",
+                common_mistakes: "Moving too fast, poor posture, not engaging your core."
+            },
+            "hot tub": {
+                instructions: "Sit comfortably in water heated to 38-40°C (100-104°F). Stay relaxed and breathe normally. Exit periodically to cool down.",
+                tips: "Stay hydrated and limit sessions to 15 minutes max. Exit if you feel dizzy or overheated.",
+                common_mistakes: "Staying too long, not hydrating, ignoring signs of overheating."
+            },
+            "sauna": {
+                instructions: "Sit upright on a towel in the sauna. Breathe slowly and deeply. Temperature should be around 70-100°C (158-212°F).",
+                tips: "Start with shorter sessions (5-10 minutes) and gradually increase. Always hydrate before and after.",
+                common_mistakes: "Staying too long, not hydrating properly, lying down instead of sitting up."
+            }
+        };
+
+        // Simple AI response generator
+        const generateAIResponse = (question) => {
+            const lowerQuestion = question.toLowerCase();
+            
+            // Check for specific exercises
+            for (const [exercise, guide] of Object.entries(exerciseGuide)) {
+                if (lowerQuestion.includes(exercise.toLowerCase())) {
+                    return `**${exercise.charAt(0).toUpperCase() + exercise.slice(1)}:**\n\n**How to do it:** ${guide.instructions}\n\n**Tips:** ${guide.tips}\n\n**Avoid:** ${guide.common_mistakes}`;
+                }
+            }
+
+            // General responses for common questions
+            if (lowerQuestion.includes("how long") || lowerQuestion.includes("duration")) {
+                return "Follow the timer durations provided for each activity. Most stretches should be held for 30 seconds per side. Recovery activities like hot tub should be 10-15 minutes max.";
+            }
+            
+            if (lowerQuestion.includes("pain") || lowerQuestion.includes("hurt")) {
+                return "You should never feel pain during recovery activities. Mild tension during stretching is normal, but sharp pain means you should stop immediately. If pain persists, consult a healthcare professional.";
+            }
+            
+            if (lowerQuestion.includes("temperature") || lowerQuestion.includes("hot")) {
+                return "Pool should be around 28°C (82°F), hot tub 38-40°C (100-104°F), and sauna 70-100°C (158-212°F). Always listen to your body and exit if you feel uncomfortable.";
+            }
+            
+            if (lowerQuestion.includes("order") || lowerQuestion.includes("sequence")) {
+                return "The recovery steps are ordered for optimal benefit: start with cool-down stretching, then massage gun, pool work, hot tub contrast, optional sauna, immediate refueling, and evening relaxation. This sequence promotes best circulation and recovery.";
+            }
+
+            if (lowerQuestion.includes("skip") || lowerQuestion.includes("optional")) {
+                return "The sauna and evening yoga are optional. All other steps are recommended for optimal recovery. If short on time, prioritize cool-down stretching, massage gun work, and refueling.";
+            }
+
+            // Default response
+            return "I can help you with specific exercises like hamstring stretch, quad stretch, calf stretch, hip flexor stretch, glute stretch, massage gun technique, pool walking, hot tub use, and sauna guidelines. Try asking about a specific exercise or recovery method!";
+        };
+
+        // AI Help Modal Component
+        const AIHelpModal = ({ isOpen, onClose }) => {
+            const [question, setQuestion] = useState("");
+            const [messages, setMessages] = useState([]);
+            const [isTyping, setIsTyping] = useState(false);
+            const messagesEndRef = useRef(null);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!question.trim()) return;
+
+                const userMessage = { type: 'user', content: question };
+                setMessages(prev => [...prev, userMessage]);
+                setQuestion("");
+                setIsTyping(true);
+
+                // Simulate AI thinking time
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const aiResponse = generateAIResponse(question);
+                const aiMessage = { type: 'ai', content: aiResponse };
+                
+                setMessages(prev => [...prev, aiMessage]);
+                setIsTyping(false);
+            };
+
+            const clearChat = () => {
+                setMessages([]);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-slate-800 rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                            <div className="flex items-center space-x-2">
+                                <Icons.HelpCircle className="w-6 h-6 text-blue-500" />
+                                <h2 className="text-xl font-bold text-white">Exercise AI Helper</h2>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                {messages.length > 0 && (
+                                    <button
+                                        onClick={clearChat}
+                                        className="px-3 py-1 text-sm bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                                <button
+                                    onClick={onClose}
+                                    className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                                >
+                                    <Icons.X className="w-5 h-5 text-slate-400" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[400px]">
+                            {messages.length === 0 && (
+                                <div className="text-center text-slate-400 py-8">
+                                    <Icons.MessageCircle className="w-12 h-12 mx-auto mb-4 text-slate-500" />
+                                    <p className="text-lg mb-2">Ask me about any exercise!</p>
+                                    <p className="text-sm">Try: "How do I do a hamstring stretch?" or "What's the right sauna temperature?"</p>
+                                </div>
+                            )}
+                            
+                            {messages.map((message, index) => (
+                                <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[80%] p-3 rounded-lg ${
+                                        message.type === 'user' 
+                                            ? 'bg-blue-600 text-white' 
+                                            : 'bg-slate-700 text-slate-100'
+                                    }`}>
+                                        <div className="whitespace-pre-wrap text-sm">
+                                            {message.content}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {isTyping && (
+                                <div className="flex justify-start">
+                                    <div className="bg-slate-700 text-slate-100 p-3 rounded-lg">
+                                        <div className="flex space-x-1">
+                                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="p-4 border-t border-slate-700">
+                            <div className="flex space-x-2">
+                                <input
+                                    type="text"
+                                    value={question}
+                                    onChange={(e) => setQuestion(e.target.value)}
+                                    placeholder="Ask about any exercise or recovery technique..."
+                                    className="flex-1 bg-slate-700 text-white placeholder-slate-400 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                                    disabled={isTyping}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!question.trim() || isTyping}
+                                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white p-2 rounded-lg transition-colors"
+                                >
+                                    <Icons.Send className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const RecoveryApp = () => {
+          const [isStarted, setIsStarted] = useState(false);
+          const [activeTimer, setActiveTimer] = useState(null);
+          const [timeLeft, setTimeLeft] = useState(0);
+          const [completedActivities, setCompletedActivities] = useState({});
+          const [isRunning, setIsRunning] = useState(false);
+          const [showAIHelp, setShowAIHelp] = useState(false);
+
+          const recoverySteps = [
+            {
+              id: 'cooldown',
+              title: 'Cool-Down Walk & Stretch',
+              duration: 600, // 10 minutes
+              icon: 'Timer',
+              color: 'from-blue-500 to-cyan-500',
+              goal: 'Lower heart rate & prevent stiffness',
+              activities: [
+                '5-minute walk at an easy pace',
+                'Hamstrings - Seated reach (30 sec per leg)',
+                'Quads - Standing/side-lying quad stretch (30 sec per leg)',
+                'Calves - Wall or step calf stretch (30 sec per leg)',
+                'Hip Flexors - Kneeling hip flexor stretch (30 sec per leg)',
+                'Glutes - Figure 4 stretch or pigeon pose (30 sec per leg)'
+              ]
+            },
+            {
+              id: 'massage',
+              title: 'Massage Gun',
+              duration: 450, // 7.5 minutes
+              icon: 'Circle',
+              color: 'from-purple-500 to-pink-500',
+              goal: 'Loosen tight muscles and improve blood flow',
+              activities: [
+                'Quads (60 sec per leg)',
+                'Hamstrings (60 sec per leg)',
+                'Calves (45 sec per leg)',
+                'Glutes (45 sec each side)',
+                'Use soft/medium attachment with slow, gliding motion'
+              ]
+            },
+            {
+              id: 'pool',
+              title: 'Pool Active Recovery',
+              duration: 540, // 9 minutes
+              icon: 'Waves',
+              color: 'from-cyan-500 to-blue-600',
+              goal: 'Promote circulation, reduce stiffness (28°C)',
+              activities: [
+                '2 mins walking lunges',
+                '1 min calf raises',
+                '1 min high knees in place',
+                '1 min hip circles or leg swings',
+                '3-5 mins easy walking or floating'
+              ]
+            },
+            {
+              id: 'hottub',
+              title: 'Hot Tub Contrast',
+              duration: 600, // 10 minutes
+              icon: 'Droplets',
+              color: 'from-orange-500 to-red-500',
+              goal: 'Boost circulation and muscle repair (38-40°C)',
+              activities: [
+                'Sit for 5 minutes',
+                'Exit for 1-2 minutes (cool down)',
+                'Return for another 3-5 minutes',
+                'Focus on relaxed breathing'
+              ]
+            },
+            {
+              id: 'sauna',
+              title: 'Sauna (Optional)',
+              duration: 900, // 15 minutes
+              icon: 'Flame',
+              color: 'from-red-500 to-yellow-500',
+              goal: 'Deep recovery, muscle relaxation (hard run days only)',
+              activities: [
+                'Stay 10-15 minutes max',
+                'Sit upright, breathe slowly',
+                'Hydrate before and after'
+              ]
+            },
+            {
+              id: 'refuel',
+              title: 'Rehydrate & Refuel',
+              duration: 0, // No timer needed
+              icon: 'Droplets',
+              color: 'from-green-500 to-emerald-500',
+              goal: 'Kickstart muscle repair and rehydrate (ASAP)',
+              activities: [
+                'Drink 500-750ml water or electrolyte drink',
+                'Recovery snack options:',
+                '• Chocolate milk + banana',
+                '• Yogurt + honey + oats',
+                '• Protein shake + fruit'
+              ]
+            },
+            {
+              id: 'evening',
+              title: 'Evening Yoga/Foam Rolling',
+              duration: 1050, // 17.5 minutes
+              icon: 'Circle',
+              color: 'from-indigo-500 to-purple-500',
+              goal: 'Wind down, improve flexibility (Optional)',
+              activities: [
+                'Child\'s pose',
+                'Downward dog to lunge',
+                'Spinal twist',
+                'Supine hamstring stretch',
+                'Light foam rolling if needed'
+              ]
+            }
+          ];
+
+          useEffect(() => {
+            let interval = null;
+            try {
+              if (isRunning && timeLeft > 0) {
+                interval = setInterval(() => {
+                  setTimeLeft(timeLeft - 1);
+                }, 1000);
+              } else if (timeLeft === 0 && isRunning && activeTimer) {
+                setIsRunning(false);
+                setCompletedActivities(prev => ({
+                  ...prev,
+                  [activeTimer]: true
+                }));
+                setActiveTimer(null);
+              }
+            } catch (error) {
+              console.error('Timer error:', error);
+              setIsRunning(false);
+            }
+            return () => {
+              if (interval) clearInterval(interval);
+            };
+          }, [isRunning, timeLeft, activeTimer]);
+
+          const formatTime = (seconds) => {
+            try {
+              const minutes = Math.floor(seconds / 60);
+              const remainingSeconds = seconds % 60;
+              return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            } catch (error) {
+              console.error('Format time error:', error);
+              return '0:00';
+            }
+          };
+
+          const startTimer = (stepId, duration) => {
+            try {
+              if (activeTimer === stepId && isRunning) {
+                setIsRunning(false);
+              } else {
+                setActiveTimer(stepId);
+                if (activeTimer !== stepId) {
+                  setTimeLeft(duration);
+                }
+                setIsRunning(true);
+              }
+            } catch (error) {
+              console.error('Start timer error:', error);
+            }
+          };
+
+          const resetTimer = (stepId, duration) => {
+            try {
+              setTimeLeft(duration);
+              setIsRunning(false);
+              if (activeTimer === stepId) {
+                setActiveTimer(null);
+              }
+            } catch (error) {
+              console.error('Reset timer error:', error);
+            }
+          };
+
+          const toggleComplete = (stepId) => {
+            try {
+              setCompletedActivities(prev => ({
+                ...prev,
+                [stepId]: !prev[stepId]
+              }));
+            } catch (error) {
+              console.error('Toggle complete error:', error);
+            }
+          };
+
+          const completedCount = Object.values(completedActivities).filter(Boolean).length;
+          const totalSteps = recoverySteps.length;
+          const progressPercentage = (completedCount / totalSteps) * 100;
+
+          if (!isStarted) {
+            return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4" },
+              React.createElement('div', { className: "text-center max-w-md" },
+                React.createElement('div', { className: "mb-8" },
+                  React.createElement('div', { className: "w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center" },
+                    React.createElement(Icons.Timer, { className: "w-12 h-12 text-white" })
+                  ),
+                  React.createElement('h1', { className: "text-4xl font-bold text-white mb-4" }, "Recovery Tracker"),
+                  React.createElement('p', { className: "text-slate-300 text-lg" }, "Complete your post-run recovery routine with guided timers and AI help")
+                ),
+                React.createElement('button', {
+                  onClick: () => setIsStarted(true),
+                  className: "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl text-lg transform transition-all duration-200 hover:scale-105 shadow-lg"
+                }, "Start Recovery Process")
+              )
+            );
+          }
+
+          return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4" },
+            React.createElement(AIHelpModal, { 
+              isOpen: showAIHelp, 
+              onClose: () => setShowAIHelp(false) 
+            }),
+            React.createElement('div', { className: "max-w-4xl mx-auto" },
+              React.createElement('div', { className: "text-center mb-8" },
+                React.createElement('div', { className: "flex items-center justify-center space-x-4 mb-4" },
+                  React.createElement('h1', { className: "text-3xl font-bold text-white" }, "Recovery Progress"),
+                  React.createElement('button', {
+                    onClick: () => setShowAIHelp(true),
+                    className: "bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 hover:scale-105 shadow-lg flex items-center space-x-2"
+                  },
+                    React.createElement(Icons.HelpCircle, { className: "w-5 h-5" }),
+                    React.createElement('span', null, "AI Help")
+                  )
+                ),
+                React.createElement('div', { className: "bg-slate-800 rounded-xl p-4 mb-6" },
+                  React.createElement('div', { className: "flex justify-between items-center mb-2" },
+                    React.createElement('span', { className: "text-slate-300" }, "Overall Progress"),
+                    React.createElement('span', { className: "text-white font-bold" }, `${completedCount}/${totalSteps}`)
+                  ),
+                  React.createElement('div', { className: "w-full bg-slate-700 rounded-full h-3" },
+                    React.createElement('div', {
+                      className: "bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-500",
+                      style: { width: `${progressPercentage}%` }
+                    })
+                  )
+                )
+              ),
+              React.createElement('div', { className: "space-y-4" },
+                recoverySteps.map((step) => {
+                  const IconComponent = Icons[step.icon];
+                  return React.createElement('div', { 
+                    key: step.id, 
+                    className: "bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 fade-in" 
+                  },
+                    React.createElement('div', { className: "flex items-start justify-between mb-4" },
+                      React.createElement('div', { className: "flex items-center space-x-3" },
+                        React.createElement('button', {
+                          onClick: () => toggleComplete(step.id),
+                          className: "flex-shrink-0"
+                        },
+                          completedActivities[step.id] 
+                            ? React.createElement(Icons.CheckCircle2, { className: "w-6 h-6 text-green-500" })
+                            : React.createElement(Icons.Circle, { className: "w-6 h-6 text-slate-400 hover:text-slate-200" })
+                        ),
+                        React.createElement('div', { className: `p-2 rounded-lg bg-gradient-to-r ${step.color}` }, 
+                          React.createElement(IconComponent, { className: "w-6 h-6 text-white" })
+                        ),
+                        React.createElement('div', null,
+                          React.createElement('h3', { className: "text-xl font-bold text-white" }, step.title),
+                          React.createElement('p', { className: "text-slate-300 text-sm" }, step.goal)
+                        )
+                      ),
+                      step.duration > 0 && React.createElement('div', { className: "flex items-center space-x-2" },
+                        React.createElement('div', { className: "text-right" },
+                          React.createElement('div', { className: "text-2xl font-bold text-white" },
+                            activeTimer === step.id ? formatTime(timeLeft) : formatTime(step.duration)
+                          )
+                        ),
+                        React.createElement('div', { className: "flex flex-col space-y-1" },
+                          React.createElement('button', {
+                            onClick: () => startTimer(step.id, step.duration),
+                            className: `p-2 rounded-lg ${
+                              activeTimer === step.id && isRunning 
+                                ? 'bg-orange-500 hover:bg-orange-600' 
+                                : 'bg-green-500 hover:bg-green-600'
+                            } text-white transition-colors`
+                          },
+                            activeTimer === step.id && isRunning 
+                              ? React.createElement(Icons.Pause, { className: "w-4 h-4" }) 
+                              : React.createElement(Icons.Play, { className: "w-4 h-4" })
+                          ),
+                          React.createElement('button', {
+                            onClick: () => resetTimer(step.id, step.duration),
+                            className: "p-2 rounded-lg bg-slate-600 hover:bg-slate-500 text-white transition-colors"
+                          },
+                            React.createElement(Icons.RotateCcw, { className: "w-4 h-4" })
+                          )
+                        )
+                      )
+                    ),
+                    React.createElement('div', { className: "ml-9" },
+                      React.createElement('ul', { className: "space-y-2" },
+                        step.activities.map((activity, index) => 
+                          React.createElement('li', { key: index, className: "text-slate-300 flex items-start" },
+                            React.createElement('span', { className: "text-slate-500 mr-2" }, "•"),
+                            activity
+                          )
+                        )
+                      )
+                    ),
+                    activeTimer === step.id && React.createElement('div', { className: "mt-4 ml-9" },
+                      React.createElement('div', { className: "bg-slate-700 rounded-full h-2" },
+                        React.createElement('div', {
+                          className: `bg-gradient-to-r ${step.color} h-2 rounded-full transition-all duration-1000`,
+                          style: { width: `${step.duration > 0 ? ((step.duration - timeLeft) / step.duration) * 100 : 0}%` }
+                        })
+                      )
+                    )
+                  );
+                })
+              ),
+              completedCount === totalSteps && React.createElement('div', { className: "mt-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl p-6 text-center fade-in" },
+                React.createElement(Icons.CheckCircle2, { className: "w-12 h-12 text-white mx-auto mb-4" }),
+                React.createElement('h2', { className: "text-2xl font-bold text-white mb-2" }, "Recovery Complete!"),
+                React.createElement('p', { className: "text-green-100" }, "Great job completing your full recovery routine. Your body will thank you!")
+              ),
+              React.createElement('div', { className: "mt-8 text-center" },
+                React.createElement('button', {
+                  onClick: () => {
+                    setIsStarted(false);
+                    setCompletedActivities({});
+                    setActiveTimer(null);
+                    setTimeLeft(0);
+                    setIsRunning(false);
+                  },
+                  className: "bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                }, "Start New Recovery Session")
+              )
+            )
+          );
+        };
+
+        // Error boundary to catch and handle React errors
+        const ErrorBoundary = ({ children }) => {
+          const [hasError, setHasError] = React.useState(false);
+          
+          React.useEffect(() => {
+            const handleError = (error) => {
+              console.error('Application error:', error);
+              setHasError(true);
+            };
+            
+            window.addEventListener('error', handleError);
+            return () => window.removeEventListener('error', handleError);
+          }, []);
+          
+          if (hasError) {
+            return React.createElement('div', { 
+              className: "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4" 
+            },
+              React.createElement('div', { className: "text-center text-white" },
+                React.createElement('h1', { className: "text-2xl font-bold mb-4" }, "Something went wrong"),
+                React.createElement('p', { className: "mb-4" }, "Please refresh the page to continue."),
+                React.createElement('button', {
+                  onClick: () => window.location.reload(),
+                  className: "bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"
+                }, "Refresh Page")
+              )
+            );
+          }
+          
+          return children;
+        };
+
+        try {
+          ReactDOM.render(
+            React.createElement(ErrorBoundary, null,
+              React.createElement(RecoveryApp)
+            ), 
+            document.getElementById('root')
+          );
+        } catch (error) {
+          console.error('Failed to render app:', error);
+          document.getElementById('root').innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #581c87 50%, #0f172a 100%); color: white; font-family: system-ui;">
+              <div style="text-align: center;">
+                <h1 style="font-size: 24px; margin-bottom: 16px;">Recovery Tracker</h1>
+                <p style="margin-bottom: 16px;">Loading application...</p>
+                <button onclick="window.location.reload()" style="background: #2563eb; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;">Refresh Page</button>
+              </div>
+            </div>
+          `;
+        }
